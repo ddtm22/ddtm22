@@ -1,0 +1,190 @@
+<html>
+  
+<head>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src="https://cdn.maptiler.com/maplibre-gl-js/v1.13.0-rc.4/mapbox-gl.js"></script>
+  <link href="https://cdn.maptiler.com/maplibre-gl-js/v1.13.0-rc.4/mapbox-gl.css" rel="stylesheet" />
+
+  <style>
+#map {position: absolute; top: 0; right: 0; bottom: 0; left: 0;}  
+    
+    .Mypopup .mapboxgl-popup-content {
+      background-color: white;
+      color : black;
+      opacity : 0.8;
+}
+    
+        .menu {
+     position: absolute;
+     top: 10px;
+     left: 30px;
+     width: 180px;
+     background-color: #FFFFFF;
+     opacity: 0.89;
+     color: #000000;
+     font: 13px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+      padding:10;
+        }
+
+    
+    
+  </style>
+
+  </head>
+
+  <body> 
+    
+  <div id="map"></div>
+   
+    <div class='menu'>
+    <hr>
+<label class="categoryLabel"><B>Projet RDI - Ref. Départemental Inondation</B></label>
+          <br>
+ <input type="checkbox" id="Batiments" value="Batiments" onchange="switchlayer('Batiments')" checked/>
+<label for="Batiments">Batiments en zone AZI</label>
+          <br>
+<input type="checkbox" id="ERP" value="ERP" onchange="switchlayer('ERP')" checked/>
+<label for="ERP">ERP</label>
+          <br>
+<input type="checkbox" id="azi" value="azi" onchange="switchlayer('azi')" checked/>
+<label for="azi">AZI</label>
+  <hr>
+</div>
+<script>
+   
+      //Appel et configuration de la carte
+    
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: 'https://api.maptiler.com/maps/basic/style.json?key=rbEqQgcj0Ok2GytwQdAo', //Fond de carte 
+  zoom: 3, // Zoom
+  center: [-2.7461634,48.4990501],  // Centrage carte
+  pitch: 60, // Inclinaison carte
+  bearing: 0,  // Rotation carte
+  minZoom:10.5
+    });
+    
+  
+ 
+ 
+    
+  // Ajout des données
+      
+map.on('load', function () {   
+   //BATIMENTS 
+
+map.addSource('Batiments', {
+        type: 'geojson',
+        data: 'https://raw.githubusercontent.com/ddtm22/ddtm22/main/bati_in_azi.geojson'
+    });
+ 
+map.addLayer({
+    'id': 'Batiments',
+    'type': 'fill-extrusion',
+    'source': 'Batiments',
+	'paint': 
+	{'fill-extrusion-color': '#A9A9A9', 
+        'fill-extrusion-height':{'type': 'identity','property': 'HAUTEUR'},
+        'fill-extrusion-color': {
+        'property': 'HAUTEUR',
+        'stops': [
+          [5, '#1a9850'],
+          [7, '#91cf60'],
+          [9, '#d9ef8b'],
+          [12, '#ffffbf'],
+      	  [16, '#fee08b'],
+	  [20, '#fc8d59'],
+          [30, '#d73027']]},
+	 'fill-extrusion-opacity': 0.9,
+         'fill-extrusion-base': 0}
+    });
+   
+     // Ajout azi 
+  
+     map.addSource('azi', {
+            type: 'geojson',
+            data: 'https://raw.githubusercontent.com/ddtm22/ddtm22/main/azi_wgs84.geojson'
+        });
+
+     map.addLayer({
+            'id': 'azi',
+            'type': 'fill',
+            'source': 'azi',
+            'paint': {
+                'fill-color': "#00ffff",
+                'fill-opacity': 0.3
+            }
+        });
+   
+     // Ajout Points
+  
+  map.addSource('ERP', {
+            type: 'geojson',
+            data: 'https://raw.githubusercontent.com/ddtm22/ddtm22/main/erp_wgs84.geojson'
+        });
+
+     map.addLayer({
+            'id': 'ERP',
+            'type': 'circle',
+            'source': 'ERP',
+            'paint': {'circle-stroke-color': 'black', 
+                      'circle-stroke-width': 2, 
+                      'circle-radius' : 5,
+                      'circle-color': 'red'}}
+                 );  
+         });
+         
+           
+  
+  
+  //Interactivité HOVER
+
+var popup = new mapboxgl.Popup({
+    className: "Mypopup",
+  closeButton: false,
+    closeOnClick: false });
+
+map.on('mousemove', function(e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: ['ERP'] });
+    // Change the cursor style as a UI indicator.
+    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+
+    if (!features.length) {
+        popup.remove();
+        return; }
+ 
+    var feature = features[0];
+        popup.setLngLat(feature.geometry.coordinates)
+          .setHTML('<h2>' + feature.properties.GRAPHIE+ '</h2><h3>' +"Type : " + feature.properties.NATURE+ '</h3>')
+          .addTo(map);
+         
+    
+});
+
+
+  // Configuration affichage menu couches
+ switchlayer = function (lname) {
+            if (document.getElementById(lname ).checked) {
+                map.setLayoutProperty(lname, 'visibility', 'visible');
+            } else {
+                map.setLayoutProperty(lname, 'visibility', 'none');
+           }
+        };
+  
+	
+    // Ajout controle de navigation 
+  
+map.addControl(new mapboxgl.NavigationControl({position: 'top-left'}));  
+  
+
+ // Ajout Echelle cartographique 
+ map.addControl(new mapboxgl.ScaleControl({maxWidth: 250,unit: 'metric'}));
+ 
+
+ 
+
+  
+</script>
+    
+</body>
+</html>
